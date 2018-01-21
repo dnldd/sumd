@@ -48,3 +48,5 @@ for failure case:
 cd /sumdemo
 ./sumdemo --pi=https://127.0.0.1:59374 --sumd=http://127.0.0.1:55650 --rpcuser=user --rpcpass=pass --fail
 ```
+
+__NB__: sumdemo includes an identity file (`identity.json`). This has been included for convenience, identity.json is intended for the example simulated by sumdemo and should not be used in any other contexts.

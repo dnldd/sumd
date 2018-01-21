@@ -56,3 +56,5 @@ The payload returned by the server is structured as follows:
 
 ## Further Improvements
 The download server currently calculates checksums on demand. It would be more efficient to use a file system watcher to trigger checksum recalculations when a release file is either newly added or updated. This would speed up the verification process significantly because release checksums would be readily available for every incoming download request.
+
+The download server also needs to rate limiting for download links and the endpoints for DDOS mitigation.
