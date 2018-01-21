@@ -43,6 +43,10 @@ func VerifyChecksum(writer http.ResponseWriter, request *http.Request) {
 
 	payload, err := sumd.verify(&metadata, sumd.Args.ReleaseDir)
 	if err != nil {
+		if err.Error() == "release file not found" {
+			WriteErrorCodeResponse(&writer, http.StatusBadRequest, err.Error())
+			return
+		}
 		WriteErrorCodeResponse(&writer, http.StatusInternalServerError, err.Error())
 		return
 	}

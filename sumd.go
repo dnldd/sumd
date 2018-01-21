@@ -87,7 +87,8 @@ func (sumd *Sumd) getReleaseFile(version string, name, releasefile string, relea
 	releasePath := fmt.Sprintf("%s/%s/%s/%s", releaseDir, name, version, releasefile)
 	file, err := os.Open(releasePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open release file: %s", err)
+		fmt.Printf("failed to release file: %s", err)
+		return nil, errors.New("release file not found")
 	}
 	return file, nil
 }
@@ -184,7 +185,9 @@ func (sumd *Sumd) verify(metadata *map[string]interface{}, releaseDir string) (m
 		payload["download"] = url
 	} else {
 		payload["verified"] = false
-		payload["error"] = "Checksum verification failed for the requested file, the download has been aborted for your safety. Report this issue to the maintainer or software dev team."
+		payload["error"] = map[string]string{
+			"msg": "data integrity check failed for the requested file, the download has been aborted for your safety.",
+		}
 	}
 
 	return payload, nil
