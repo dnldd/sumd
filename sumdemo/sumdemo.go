@@ -195,61 +195,65 @@ func publishRecord() error {
 }
 
 // fetchChecksumRecords fetch checksum metadata from a publish pi record
-func fetchChecksumRecords() error {
-	// create record retrieval payload
-	payload := v1.GetVetted{
-		Challenge: hex.EncodeToString(fi.Public.Key[:]),
-		Token:     censorshipRecord.Token,
-	}
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	// request pi record
-	req, err := http.NewRequest("POST", args.Pi+v1.GetVettedRoute,
-		bytes.NewReader(payloadBytes))
-	if err != nil {
-		return err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body := util.ConvertBodyToByteArray(resp.Body, false)
-	reply := &v1.GetVettedReply{}
-	err = json.Unmarshal(body, reply)
-	if err != nil {
-		return err
-	}
-	sigBytes := []byte(reply.Record.CensorshipRecord.Signature)
-	var sig [identity.SignatureSize]byte
-	copy(sig[:], sigBytes)
-
-	// verify pi response & client challenge
-	if pipi.VerifyMessage(body, sig) {
-		return errors.New("message verification failed")
-	}
-	err = util.VerifyChallenge(pipi, fi.Public.Key[:], reply.Response)
-	if err != nil {
-		return err
-	}
-	checksumRecords = &reply.Record.Metadata
-	recordBytes, err := json.Marshal(*checksumRecords)
-	if err != nil {
-		return err
-	}
-	log.Printf(">>> pi record retrieved, release information obtained from metadata:\n%s\n", prettyPrint(&recordBytes))
-	return nil
-}
+// func fetchChecksumRecords() error {
+// 	// create record retrieval payload
+// 	payload := v1.GetVetted{
+// 		Challenge: hex.EncodeToString(fi.Public.Key[:]),
+// 		Token:     censorshipRecord.Token,
+// 	}
+// 	payloadBytes, err := json.Marshal(payload)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	// request pi record
+// 	req, err := http.NewRequest("POST", args.Pi+v1.GetVettedRoute,
+// 		bytes.NewReader(payloadBytes))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer resp.Body.Close()
+// 	body := util.ConvertBodyToByteArray(resp.Body, false)
+// 	reply := &v1.GetVettedReply{}
+// 	err = json.Unmarshal(body, reply)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	sigBytes := []byte(reply.Record.CensorshipRecord.Signature)
+// 	var sig [identity.SignatureSize]byte
+// 	copy(sig[:], sigBytes)
+//
+// 	// verify pi response & client challenge
+// 	if pipi.VerifyMessage(body, sig) {
+// 		return errors.New("message verification failed")
+// 	}
+// 	err = util.VerifyChallenge(pipi, fi.Public.Key[:], reply.Response)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	checksumRecords = &reply.Record.Metadata
+// 	recordBytes, err := json.Marshal(*checksumRecords)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	log.Printf(">>> pi record retrieved, release information obtained from metadata:\n%s\n", prettyPrint(&recordBytes))
+// 	return nil
+// }
 
 // VerifyRelease asserts the integrity of a release file
-func VerifyRelease(metadata v1.MetadataStream) error {
+func VerifyRelease(payload *map[string]interface{}) error {
+	payloadBytes, err := json.Marshal(*payload)
+	if err != nil {
+		return err
+	}
 	// verify release info with sumd
 	log.Println(">>> verifying release information with sumd...")
 	req, err := http.NewRequest("POST", args.Sumd+verifyRoute,
-		bytes.NewReader([]byte(metadata.Payload)))
+		bytes.NewReader(payloadBytes))
 	if err != nil {
 		return err
 	}
@@ -300,7 +304,7 @@ func main() {
 	spew.Config.Indent = "\t"
 	_, err := flags.Parse(args)
 	if err == nil {
-		fi, err = identity.LoadFullIdentity("identity.json")
+		fi, err = identity.LoadFullIdentity("../identity.json")
 		if err != nil {
 			log.Println(err)
 		}
@@ -316,19 +320,22 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		err = fetchChecksumRecords()
+
+		verifyPayload := map[string]interface{}{
+			"token":   censorshipRecord.Token,
+			"product": "mounty",
+			"version": "1.7",
+			"file":    "mounty.dmg",
+		}
+
+		err := VerifyRelease(&verifyPayload)
 		if err != nil {
 			log.Println(err)
 		}
-		for _, metadata := range *checksumRecords {
-			err := VerifyRelease(metadata)
-			if err != nil {
-				log.Println(err)
-			}
-			err = DownloadReleaseFile()
-			if err != nil {
-				log.Println(err)
-			}
+
+		err = DownloadReleaseFile()
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }

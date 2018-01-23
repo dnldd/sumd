@@ -35,13 +35,34 @@ func VerifyChecksum(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	metadata, err := utils.JSONUnmarshal(&body)
+	data, err := utils.JSONUnmarshal(&body)
 	if err != nil {
 		service.WriteErrorCodeResponse(&writer, http.StatusBadRequest, "request body is invalid json")
 		return
 	}
 
-	payload, err := sumd.verify(&metadata, sumd.Args.ReleaseDir)
+	token, tokenOk := data["token"].(string)
+	if !tokenOk {
+		WriteErrorCodeResponse(&writer, http.StatusBadRequest, "required 'token' param not found")
+		return
+	}
+	product, productOk := data["product"].(string)
+	if !productOk {
+		WriteErrorCodeResponse(&writer, http.StatusBadRequest, "required 'product' param not found")
+		return
+	}
+	version, versionOk := data["version"].(string)
+	if !versionOk {
+		WriteErrorCodeResponse(&writer, http.StatusBadRequest, "required 'version' param not found")
+		return
+	}
+	file, fileOk := data["file"].(string)
+	if !fileOk {
+		WriteErrorCodeResponse(&writer, http.StatusBadRequest, "required 'file' param not found")
+		return
+	}
+
+	payload, err := sumd.verify(token, product, version, file)
 	if err != nil {
 		if err.Error() == "release file not found" {
 			WriteErrorCodeResponse(&writer, http.StatusBadRequest, err.Error())

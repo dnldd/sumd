@@ -7,12 +7,17 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
-// run with ./sumd --reldir=rel --baseurl=http://127.0.0.1 --port=:55650
+// run with ./sumd --reldir=rel --baseurl=http://127.0.0.1 --pi=https://127.0.0.1:59374 --port=:55650
 var sumd *Sumd
 
 func main() {
-	sumd = NewSumd()
-	_, err := flags.Parse(sumd.Args)
+	args := &Args{}
+	_, err := flags.Parse(args)
+	if err != nil {
+		panic(err)
+	}
+
+	sumd, err = NewSumd(args)
 	if err != nil {
 		panic(err)
 	}
