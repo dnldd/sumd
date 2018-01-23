@@ -49,4 +49,4 @@ cd /sumdemo
 ./sumdemo --pi=https://127.0.0.1:59374 --sumd=http://127.0.0.1:55650 --rpcuser=user --rpcpass=pass --fail
 ```
 
-__NB__: sumdemo and sumd  an identity file (`identity.json`). This has been included for convenience and demonstration purposes only, the identity should not be used in any other contexts.
+__NB__: sumdemo and sumd use an identity file (`identity.json`). This has been included for convenience and demonstration purposes only, the identity should not be used in any other contexts.
